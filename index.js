@@ -19,7 +19,7 @@ async function run() {
         const productCollection = client.db('carpenco').collection('products');
         const reviewCollection = client.db('carpenco').collection('review');
         const orderCollection = client.db('carpenco').collection('orders');
-
+        const userCollection = client.db('carpenco').collection('user');
         app.post('/products', async (req, res) => {
             const products = req.body;
             const result = await productCollection.insertOne(products)
@@ -50,7 +50,15 @@ async function run() {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result);
+
         })
+
+        app.get('/order', async (req, res) => {
+            const result = await orderCollection.find().toArray()
+            res.send(result);
+        })
+
+
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
             const updatedQuantity = req.body.quantity;
@@ -66,6 +74,34 @@ async function run() {
 
 
         })
+
+        app.get('/order/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await orderCollection.find(query).toArray()
+            res.send(result)
+        })
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email }
+            const options = { upsert: true }
+            const updateDoc = {
+                $set: user,
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, options)
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+            res.send({ result, token });
+        })
+        //getting user info
+        app.get('/userinfo/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await userCollection.findOne(query)
+            res.send(result)
+        })
+
+
 
     }
     finally {
